@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punisquishy | Tienda Kawaii</title>
+    <script src="https://tailwindcss.com"></script>
+    <style>
+        .bg-kawaii-pink { background-color: #FFE5EC; }
+        .bg-kawaii-celeste { background-color: #E8F0FE; }
+        .text-kawaii-purple { color: #6C5B7B; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans pb-24">
+
+    <!-- Encabezado -->
+    <header class="bg-white shadow-sm p-6 text-center">
+        <h1 class="text-4xl font-bold text-kawaii-purple mb-1">🧸 PUNISQUISHY 🧸</h1>
+        <p class="text-sm text-gray-500 font-medium">Los squishies más tiernos de Chile 🇨🇱</p>
+    </header>
+
+    <!-- Catálogo de Productos -->
+    <main class="max-w-6xl mx-auto p-6 grid grid-cols-1 md:grid-cols-3 gap-6" id="contenedor-productos">
+        <!-- Los productos se cargan automáticamente aquí con JavaScript -->
+    </main>
+
+    <!-- Barra del Carrito (Fija abajo) -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t border-pink-100 shadow-lg p-4 flex justify-between items-center max-w-4xl mx-auto rounded-t-2xl z-50">
+        <div>
+            <p class="text-xs text-gray-400 font-bold uppercase">Tu Carrito</p>
+            <p class="text-xl font-bold text-gray-800" id="total-carrito">Total: \$0 CLP</p>
+            <p class="text-xs text-pink-500" id="cantidad-items">0 productos seleccionados</p>
+        </div>
+        <button onclick="enviarPedidoWhatsApp()" class="bg-emerald-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-emerald-600 transition flex items-center gap-2">
+            Pedir por WhatsApp 💬
+        </button>
+    </div>
+
+    <!-- MÓDULO JAVASCRIPT -->
+    <script>
+        // 1. TU BASE DE DATOS DE PRODUCTOS (Modifica los precios o nombres aquí)
+        const productos = [
+            { id: 1, nombre: "Squishy Osito Arcoíris", precio: 4990, imagen: "https://placehold.co" },
+            { id: 2, nombre: "Squishy Gatito Hambriento", precio: 5500, imagen: "https://placehold.co" },
+            { id: 3, nombre: "Squishy Pandita Relajado", precio: 4990, imagen: "https://placehold.co" }
+        ];
+
+        // Carrito de compras temporal (guarda el ID y la cantidad)
+        let carrito = {};
+
+        // 2. RENDERIZAR PRODUCTOS EN LA PÁGINA
+        const contenedor = document.getElementById("contenedor-productos");
+        productos.forEach(prod => {
+            contenedor.innerHTML += `
+                <div class="bg-white rounded-2xl shadow-sm p-4 text-center border border-pink-50 hover:shadow-md transition">
+                    <img src="${prod.imagen}" alt="${prod.nombre}" class="w-full h-48 object-cover rounded-xl mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">${prod.nombre}</h3>
+                    <p class="text-pink-500 font-bold text-xl my-2">$${prod.precio.toLocaleString('es-CL')} CLP</p>
+                    <div class="flex justify-center items-center gap-3 mt-4">
+                        <button onclick="cambiarCantidad(${prod.id}, -1)" class="bg-gray-100 text-gray-600 font-bold w-8 h-8 rounded-full hover:bg-gray-200">-</button>
+                        <span id="cant-${prod.id}" class="font-bold text-gray-700">0</span>
+                        <button onclick="cambiarCantidad(${prod.id}, 1)" class="bg-kawaii-pink text-gray-700 font-bold w-8 h-8 rounded-full hover:opacity-80">+</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        // 3. LÓGICA DEL CARRITO (Sumar / Restar)
+        function cambiarCantidad(id, cambio) {
+            if (!carrito[id]) carrito[id] = 0;
+            carrito[id] += cambio;
+
+            if (carrito[id] <= 0) delete carrito[id];
+
+            // Actualizar el número en la tarjeta del producto
+            document.getElementById(`cant-${id}`).innerText = carrito[id] || 0;
+            
+            actualizarBarraCarrito();
+        }
+
+        // 4. ACTUALIZAR LOS TOTALES EN PANTALLA
+        function actualizarBarraCarrito() {
+            let total = 0;
+            let totalItems = 0;
+
+            Object.keys(carrito).forEach(id => {
+                const prod = productos.find(p => p.id == id);
+                total += prod.precio * carrito[id];
+                totalItems += carrito[id];
+            });
+
+            document.getElementById("total-carrito").innerText = `Total: $${total.toLocaleString('es-CL')} CLP`;
+            document.getElementById("cantidad-items").innerText = `${totalItems} productos seleccionados`;
+        }
+
+        // 5. ENVIAR EL PEDIDO TERMINADO A WHATSAPP
+        function enviarPedidoWhatsApp() {
+            if (Object.keys(carrito).length === 0) {
+                alert("¡Tu carrito está vacío! Agrega algunos squishies primero 🧸");
+                return;
+            }
+
+            // Cambia este número por TU WhatsApp de ventas (Debe incluir código de país, sin el +)
+            const tuTelefono = "56912345678"; 
+
+            let mensaje = "¡Hola Punisquishy! 🧸 Quiero hacer un pedido:\n\n";
+            let total = 0;
+
+            Object.keys(carrito).forEach(id => {
+                const prod = productos.find(p => p.id == id);
+                const subtotal = prod.precio * carrito[id];
+                total += subtotal;
+                mensaje += `• ${carrito[id]}x ${prod.nombre} ($${subtotal.toLocaleString('es-CL')} CLP)\n`;
+            });
+
+            mensaje += `\n💰 *Total a pagar:* $${total.toLocaleString('es-CL')} CLP\n`;
+            mensaje += `📦 ¿Me podrías indicar los datos para la transferencia y el envío?`;
+
+            // Codificar el texto para que sea compatible con un link web
+            const mensajeEncriptado = encodeURIComponent(mensaje);
+            
+            // Abrir WhatsApp en pestaña nueva
+            window.open(`https://wa.me{tuTelefono}?text=${mensajeEncriptado}`, '_blank');
+        }
+    </script>
+</body>
+</html>
